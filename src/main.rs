@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
-use rocket::fs::{relative, FileServer};
+use rocket::fs::FileServer;
 use rocket::serde::Serialize;
 use rocket_dyn_templates::Template;
 
