@@ -79,6 +79,6 @@ fn index() -> Template {
 fn rocket() -> _ {
     rocket::build()
         .mount("/", routes![index])
-        .mount("/static", FileServer::from(relative!("static")))
+        .mount("/static", FileServer::from("./static"))
         .attach(Template::fairing())
 }
