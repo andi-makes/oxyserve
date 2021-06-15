@@ -15,8 +15,6 @@ RUN cargo install --target x86_64-unknown-linux-musl --path .
 FROM scratch
 WORKDIR /
 COPY --from=build /usr/local/cargo/bin/andi-makes-dev .
-COPY static ./static/
-COPY templates ./templates/
 COPY Rocket.toml ./
 EXPOSE 8000
 USER 1000
