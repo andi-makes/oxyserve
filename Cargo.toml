@@ -1,5 +1,5 @@
 [package]
-name = "andi-makes-dev"
+name = "oxyserve"
 version = "0.1.0"
 authors = ["andi-makes <26302678+andi-makes@users.noreply.github.com>"]
 edition = "2018"
