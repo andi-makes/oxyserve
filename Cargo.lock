@@ -850,7 +850,8 @@ version = "0.1.0"
 dependencies = [
  "rocket",
  "rocket_dyn_templates",
- "toml",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
