@@ -6,7 +6,8 @@ use serde_json::Value as JsonValue;
 
 #[derive(Serialize, Deserialize)]
 pub struct Config {
-    pub from_file: Option<Vec<String>>,
+    from_file: Option<Vec<String>>,
+    pub template_name: String,
     pub context: JsonValue,
 }
 
@@ -20,11 +21,12 @@ impl Config {
 
         if let Some(fields) = &s.from_file {
             for field_name in fields {
-                let field = &s.context[field_name];
+                let field = s.context.pointer(field_name).unwrap();
+
                 let filename = field.as_str();
 
                 if let Some(filename) = filename {
-                    *s.context.get_mut(field_name).unwrap() =
+                    *s.context.pointer_mut(field_name).unwrap() =
                         json!(std::fs::read_to_string(filename).ok()?);
                 } else {
                     return None;
