@@ -14,11 +14,15 @@ use rocket_dyn_templates::Template;
 fn index(path: PathBuf) -> Result<Template, Status> {
     let config_path: PathBuf = ["./data", path.to_str().unwrap().trim(), "config.json"].iter().collect();
 
-    println!("{}", config_path.to_str().unwrap());
-
     let page = match Config::from_file(config_path) {
-        Some(p) => p,
-        None => return Err(Status::NotFound),
+        Ok(p) => p,
+        Err(e) => match e { // TODO: Better Error logging / responding
+            config::ConfigError::File => return Err(Status::NotFound),
+            config::ConfigError::Parse => return Err(Status::InternalServerError),
+            config::ConfigError::MissingField => return Err(Status::InternalServerError),
+            config::ConfigError::ReplaceContent => return Err(Status::InternalServerError),
+            config::ConfigError::Type => return Err(Status::InternalServerError),
+        },
     };
 
     Ok(Template::render(page.template_name, page.context))

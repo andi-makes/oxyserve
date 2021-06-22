@@ -4,6 +4,14 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value as JsonValue;
 
+pub enum ConfigError {
+    File,
+    Parse,
+    MissingField,
+    ReplaceContent,
+    Type,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Config {
     from_file: Option<Vec<String>>,
@@ -12,28 +20,39 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file<P: AsRef<Path>>(path: P) -> Option<Self> {
-        Self::from_str(&std::fs::read_to_string(path).ok()?)
+    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, ConfigError> {
+        Self::from_str(match &std::fs::read_to_string(path) {
+            Ok(s) => s,
+            Err(_) => return Err(ConfigError::File),
+        })
     }
 
-    pub fn from_str(input: &str) -> Option<Self> {
-        let mut s: Self = serde_json::from_str(input).ok()?;
+    pub fn from_str(input: &str) -> Result<Self, ConfigError> {
+        let mut s: Self = match serde_json::from_str(input) {
+            Ok(c) => c,
+            Err(_) => return Err(ConfigError::Parse),
+        };
 
         if let Some(fields) = &s.from_file {
             for field_name in fields {
-                let field = s.context.pointer(field_name).unwrap();
+                let field = match s.context.pointer_mut(field_name) {
+                    Some(f) => f,
+                    None => return Err(ConfigError::MissingField),
+                };
 
                 let filename = field.as_str();
 
                 if let Some(filename) = filename {
-                    *s.context.pointer_mut(field_name).unwrap() =
-                        json!(std::fs::read_to_string(filename).ok()?);
+                    *field = json!(match std::fs::read_to_string(filename) {
+                        Ok(s) => s,
+                        Err(_) => return Err(ConfigError::ReplaceContent),
+                    });
                 } else {
-                    return None;
+                    return Err(ConfigError::Type);
                 }
             }
         }
 
-        Some(s)
+        Ok(s)
     }
 }
