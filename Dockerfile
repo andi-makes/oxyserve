@@ -4,12 +4,9 @@ WORKDIR /usr/src
 
 RUN rustup target add x86_64-unknown-linux-musl
 
-RUN USER=root cargo new app
 WORKDIR /usr/src/app
 COPY Cargo.toml Cargo.lock ./
-RUN cargo install --target x86_64-unknown-linux-musl --path .
-
-COPY src ./src
+COPY src/ ./src/
 RUN cargo install --target x86_64-unknown-linux-musl --path .
 
 FROM scratch
