@@ -12,16 +12,15 @@ use rocket_dyn_templates::{Metadata, Template};
 
 #[get("/<path..>", rank = 1000)]
 fn index(path: PathBuf) -> Result<Template, Status> {
-    let config_path: PathBuf = ["./data", path.to_str().unwrap().trim(), "config.json"].iter().collect();
+    let config_path: String = format!("./data/pages/{}/index.json", path.to_str().unwrap().trim());
 
-    let page = match Config::from_file(config_path) {
+    let page = match Config::from_file(&config_path) {
         Ok(p) => p,
-        Err(e) => match e { // TODO: Better Error logging / responding
-            config::ConfigError::File => return Err(Status::NotFound),
-            config::ConfigError::Parse => return Err(Status::InternalServerError),
-            config::ConfigError::MissingField => return Err(Status::InternalServerError),
-            config::ConfigError::ReplaceContent => return Err(Status::InternalServerError),
-            config::ConfigError::Type => return Err(Status::InternalServerError),
+        Err(e) => match e {
+            config::ConfigError::NotFound { name: _ } => return Err(Status::NotFound),
+            config::ConfigError::InternalServerError { context: _ } => {
+                return Err(Status::InternalServerError)
+            }
         },
     };
 
