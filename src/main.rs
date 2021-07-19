@@ -1,4 +1,6 @@
+mod catcher;
 mod config;
+mod helpers;
 
 use config::Config;
 
@@ -7,8 +9,8 @@ extern crate rocket;
 
 use std::path::PathBuf;
 
-use rocket::{fs::FileServer, http::Status, request::FromRequest};
-use rocket_dyn_templates::{Metadata, Template};
+use rocket::{fs::FileServer, http::Status};
+use rocket_dyn_templates::Template;
 
 #[get("/<path..>", rank = 1000)]
 fn index(path: PathBuf) -> Result<Template, Status> {
@@ -27,24 +29,13 @@ fn index(path: PathBuf) -> Result<Template, Status> {
     Ok(Template::render(page.template_name, page.context))
 }
 
-#[catch(404)]
-async fn not_found<'a>(req: &rocket::Request<'a>) -> Result<Template, &'static str> {
-    let metadata = Metadata::from_request(req).await.unwrap();
-    if metadata.contains_template("404") {
-        match Config::from_file("./data/404.json") {
-            Ok(c) => Ok(Template::render("404", c.context)),
-            Err(_) => Ok(Template::render("404", ())),
-        }
-    } else {
-        Err("404 not found")
-    }
-}
-
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .register("/", catchers![not_found])
+        .register("/", catchers![catcher::not_found])
         .mount("/", routes![index])
         .mount("/static", FileServer::from("./data/static"))
-        .attach(Template::fairing())
+        .attach(Template::custom(|engines| {
+            helpers::customize(&mut engines.handlebars);
+        }))
 }
