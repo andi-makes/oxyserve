@@ -20,7 +20,7 @@ fn index(path: PathBuf) -> Result<Template, Status> {
         Ok(p) => p,
         Err(e) => match e {
             config::ConfigError::NotFound { name: _ } => return Err(Status::NotFound),
-            config::ConfigError::InternalServerError { context: _ } => {
+            config::ConfigError::JsonParseError { context: _ } => {
                 return Err(Status::InternalServerError)
             }
         },
