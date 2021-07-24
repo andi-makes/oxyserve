@@ -46,7 +46,7 @@ fn asvg<'reg: 'rc, 'rc>(
 
     out.write("<a href=\"")?;
     out.write(link.value().as_str().unwrap())?;
-    out.write("\">")?;
+    out.write("\" target=\"_blank\" rel=\"noopener noreferrer\">")?;
     out.write(&svg)?;
     out.write(" ")?;
     out.write(text.value().as_str().unwrap())?;
