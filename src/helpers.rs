@@ -1,4 +1,5 @@
 mod markdown;
+mod notes;
 mod svg;
 mod util;
 
@@ -12,4 +13,5 @@ pub fn customize(hbs: &mut Handlebars) {
     svg::Helpers::register(hbs);
     util::Helpers::register(hbs);
     markdown::Helpers::register(hbs);
+    notes::Helpers::register(hbs);
 }

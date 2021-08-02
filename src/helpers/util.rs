@@ -13,7 +13,9 @@ pub fn embed<'reg: 'rc, 'rc>(
 ) -> HelperResult {
     let param = h.param(0).unwrap();
 
-    let path = format!("./data/{}", param.value().as_str().unwrap().trim());
+    let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+    let path = format!("{}/{}", data_dir, param.value().as_str().unwrap().trim());
+
     let content = std::fs::read_to_string(path).unwrap();
 
     out.write(&content)?;

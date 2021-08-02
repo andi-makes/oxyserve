@@ -23,7 +23,8 @@ fn text_svg<'reg: 'rc, 'rc>(
 ) -> HelperResult {
     let param = h.param(0).unwrap();
 
-    let path = format!("./data/{}", param.value().as_str().unwrap().trim());
+    let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+    let path = format!("{}/{}", data_dir, param.value().as_str().unwrap().trim());
     let svg = get_text_svg(&path);
 
     out.write(&svg)?;
@@ -41,7 +42,8 @@ fn asvg<'reg: 'rc, 'rc>(
     let link = h.param(1).unwrap();
     let svg = h.param(2).unwrap();
 
-    let svg_path = format!("./data/{}", svg.value().as_str().unwrap().trim());
+    let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+    let svg_path = format!("{}/{}", data_dir, svg.value().as_str().unwrap().trim());
     let svg = get_text_svg(&svg_path);
 
     out.write("<a href=\"")?;
