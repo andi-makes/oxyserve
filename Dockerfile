@@ -1,4 +1,4 @@
-FROM rust:1.52.1 AS build
+FROM rust:1.54 AS build
 
 WORKDIR /usr/src
 
