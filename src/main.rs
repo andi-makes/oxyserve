@@ -64,7 +64,7 @@ impl<'r> response::Responder<'r, 'static> for CachedFile {
     }
 }
 
-#[get("/static/<file..>", rank=10)]
+#[get("/static/<file..>", rank = 10)]
 async fn files(file: PathBuf) -> Option<CachedFile> {
     let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
 

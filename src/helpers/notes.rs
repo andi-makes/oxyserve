@@ -1,3 +1,5 @@
+use crate::helpers::util;
+
 use super::CustomHelper;
 use rocket_dyn_templates::handlebars::{
     Context, Handlebars, Helper, HelperResult, Output, RenderContext,
@@ -23,7 +25,7 @@ impl Helpers {
         let re = Regex::new(r#"(?m)^# (.*)$"#).unwrap();
         let title = &re.captures(&content).unwrap()[1];
 
-        out.write(title)?;
+        out.write(&title)?;
         Ok(())
     }
 
@@ -42,7 +44,7 @@ impl Helpers {
         let re = Regex::new(r#"(?m)^[A-Za-z].*(?:\n[A-Za-z].*)*"#).unwrap();
         let description = &re.captures(&content).unwrap()[0];
 
-        out.write(description)?;
+        out.write(&util::markdownify(&description))?;
         Ok(())
     }
 
@@ -119,19 +121,8 @@ impl Helpers {
         let title = &re.captures(&content).unwrap()[0];
 
         let content = content.replace(title, "");
-        use pulldown_cmark::{html, Options, Parser};
 
-        // Set up options and parser. Strikethroughs are not part of the CommonMark standard
-        // and we therefore must enable it explicitly.
-        let mut options = Options::empty();
-        options.insert(Options::ENABLE_STRIKETHROUGH);
-        let parser = Parser::new_ext(&content, options);
-
-        // Write to String buffer.
-        let mut html_output: String = String::with_capacity(content.len() * 3 / 2);
-        html::push_html(&mut html_output, parser);
-
-        out.write(&html_output)?;
+        out.write(&util::markdownify(&content))?;
         Ok(())
     }
 }
