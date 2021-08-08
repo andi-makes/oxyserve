@@ -14,12 +14,12 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(path: &str) -> Result<Self, ConfigError> {
+    pub fn from_file(path: &dyn AsRef<std::path::Path>) -> Result<Self, ConfigError> {
         Self::from_str(match &std::fs::read_to_string(path) {
             Ok(s) => s,
             Err(_) => {
                 return Err(ConfigError::NotFound {
-                    name: format!("Path: {}", path),
+                    name: format!("Path: {}", path.as_ref().display()),
                 })
             }
         })

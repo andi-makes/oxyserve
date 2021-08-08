@@ -14,14 +14,26 @@ use rocket_dyn_templates::Template;
 
 #[get("/<path..>", rank = 1000)]
 fn index(path: PathBuf) -> Result<Template, Status> {
-    let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
-    let config_path: String = format!(
-        "{}/pages/{}/index.json",
-        data_dir,
-        path.to_str().unwrap().trim()
-    );
+    // Get the data directory
+    let data_dir = &std::env::var("DATA_DIR").unwrap_or("./data".to_string());
 
-    let page = match Config::from_file(&config_path) {
+    // First, construct the path to a normal page
+    let mut page_path = PathBuf::from(data_dir);
+    page_path.push("pages");
+    page_path.push(&path);
+    page_path.push("index");
+    page_path.set_extension("json");
+    
+    // If there is no normal page, construct a path to a note
+    if !page_path.exists() {
+        page_path = PathBuf::from(data_dir);
+        page_path.push("notes");
+        page_path.push(&path);
+        page_path.set_extension("json");
+    }
+
+    // Try that path and get the config file
+    let page = match Config::from_file(&page_path) {
         Ok(p) => p,
         Err(e) => match e {
             config::ConfigError::NotFound { name: _ } => return Err(Status::NotFound),
@@ -31,24 +43,7 @@ fn index(path: PathBuf) -> Result<Template, Status> {
         },
     };
 
-    Ok(Template::render(page.template_name, page.context))
-}
-
-#[get("/notes/<path..>", rank = 999)]
-fn notes(path: PathBuf) -> Result<Template, Status> {
-    let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
-    let config_path: String = format!("{}/notes/{}.json", data_dir, path.to_str().unwrap().trim());
-
-    let page = match Config::from_file(&config_path) {
-        Ok(p) => p,
-        Err(e) => match e {
-            config::ConfigError::NotFound { name: _ } => return Err(Status::NotFound),
-            config::ConfigError::JsonParseError { context: _ } => {
-                return Err(Status::InternalServerError)
-            }
-        },
-    };
-
+    // Render the html page based on the config file
     Ok(Template::render(page.template_name, page.context))
 }
 
@@ -80,8 +75,7 @@ async fn files(file: PathBuf) -> Option<CachedFile> {
 fn rocket() -> _ {
     rocket::build()
         .register("/", catchers![catcher::not_found])
-        .mount("/", routes![index, notes, files])
-        // .mount("/static", FileServer::from(format!("{}/static", &data_dir)))
+        .mount("/", routes![index, files])
         .attach(Template::custom(move |engines| {
             helpers::customize(&mut engines.handlebars);
         }))
