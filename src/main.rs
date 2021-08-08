@@ -48,6 +48,8 @@ fn index(path: PathBuf) -> Result<Template, Status> {
 }
 
 // CACHE STATIC FILES
+// See https://github.com/SergioBenitez/Rocket/issues/95#issuecomment-354824883
+// I had to adopt it a little bit tho
 
 struct CachedFile(NamedFile);
 
@@ -73,6 +75,10 @@ async fn files(file: PathBuf) -> Option<CachedFile> {
 
 #[launch]
 fn rocket() -> _ {
+    let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+
+    std::env::set_var("ROCKET_TEMPLATE_DIR", format!("{}/templates", data_dir));
+    
     rocket::build()
         .register("/", catchers![catcher::not_found])
         .mount("/", routes![index, files])
