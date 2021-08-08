@@ -15,7 +15,7 @@ use rocket_dyn_templates::Template;
 #[get("/<path..>", rank = 1000)]
 fn index(path: PathBuf) -> Result<Template, Status> {
     // Get the data directory
-    let data_dir = &std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+    let data_dir = &std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
 
     // First, construct the path to a normal page
     let mut page_path = PathBuf::from(data_dir);
@@ -63,22 +63,22 @@ impl<'r> response::Responder<'r, 'static> for CachedFile {
 
 #[get("/static/<file..>", rank = 10)]
 async fn files(file: PathBuf) -> Option<CachedFile> {
-    let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+    let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
 
     NamedFile::open(std::path::Path::new(&format!("{}/static", &data_dir)).join(file))
         .await
         .ok()
-        .map(|nf| CachedFile(nf))
+        .map(CachedFile)
 }
 
 // READY FOR LAUNCH
 
 #[launch]
 fn rocket() -> _ {
-    let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+    let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
 
     std::env::set_var("ROCKET_TEMPLATE_DIR", format!("{}/templates", data_dir));
-    
+
     rocket::build()
         .register("/", catchers![catcher::not_found])
         .mount("/", routes![index, files])

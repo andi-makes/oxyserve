@@ -11,7 +11,7 @@ pub fn markdownify(content: &str) -> String {
     // and we therefore must enable it explicitly.
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
-    let parser = Parser::new_ext(&content, options);
+    let parser = Parser::new_ext(content, options);
 
     // Write to String buffer.
     let mut html_output = String::with_capacity(content.len() * 3 / 2);
@@ -19,7 +19,7 @@ pub fn markdownify(content: &str) -> String {
     html_output
 }
 
-pub fn embed<'reg: 'rc, 'rc>(
+pub fn embed(
     h: &Helper,
     _: &Handlebars,
     _: &Context,
@@ -28,7 +28,7 @@ pub fn embed<'reg: 'rc, 'rc>(
 ) -> HelperResult {
     let param = h.param(0).unwrap();
 
-    let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+    let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
     let path = format!("{}/{}", data_dir, param.value().as_str().unwrap().trim());
 
     let content = std::fs::read_to_string(path).unwrap();

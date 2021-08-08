@@ -10,7 +10,7 @@ use regex::Regex;
 pub struct Helpers;
 
 impl Helpers {
-    fn note_title<'reg: 'rc, 'rc>(
+    fn note_title(
         h: &Helper,
         _: &Handlebars,
         _: &Context,
@@ -18,18 +18,18 @@ impl Helpers {
         out: &mut dyn Output,
     ) -> HelperResult {
         let param = h.param(0).unwrap();
-        let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+        let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
         let path = format!("{}/{}", data_dir, param.value().as_str().unwrap().trim());
         let content = std::fs::read_to_string(path).unwrap();
 
         let re = Regex::new(r#"(?m)^# (.*)$"#).unwrap();
         let title = &re.captures(&content).unwrap()[1];
 
-        out.write(&title)?;
+        out.write(title)?;
         Ok(())
     }
 
-    fn note_description<'reg: 'rc, 'rc>(
+    fn note_description(
         h: &Helper,
         _: &Handlebars,
         _: &Context,
@@ -37,18 +37,18 @@ impl Helpers {
         out: &mut dyn Output,
     ) -> HelperResult {
         let param = h.param(0).unwrap();
-        let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+        let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
         let path = format!("{}/{}", data_dir, param.value().as_str().unwrap().trim());
         let content = std::fs::read_to_string(path).unwrap();
 
         let re = Regex::new(r#"(?m)^[A-Za-z].*(?:\n[A-Za-z].*)*"#).unwrap();
         let description = &re.captures(&content).unwrap()[0];
 
-        out.write(&util::markdownify(&description))?;
+        out.write(&util::markdownify(description))?;
         Ok(())
     }
 
-    fn note_author<'reg: 'rc, 'rc>(
+    fn note_author(
         h: &Helper,
         _: &Handlebars,
         _: &Context,
@@ -58,13 +58,13 @@ impl Helpers {
         let param = h.param(0).unwrap().value().as_str().unwrap();
 
         let re = Regex::new(r#"\w+-(\w+)-\w+\.md$"#).unwrap();
-        let author = &re.captures(&param).unwrap()[1];
+        let author = &re.captures(param).unwrap()[1];
 
         out.write(&author.replace('_', " "))?;
         Ok(())
     }
 
-    fn note_date<'reg: 'rc, 'rc>(
+    fn note_date(
         h: &Helper,
         _: &Handlebars,
         _: &Context,
@@ -74,9 +74,9 @@ impl Helpers {
         let param = h.param(0).unwrap().value().as_str().unwrap();
 
         let re = Regex::new(r#"(\d{4})_(\d{2})_(\d{2})-\w+-\w+\.md$"#).unwrap();
-        let year = &re.captures(&param).unwrap()[1];
-        let month = &re.captures(&param).unwrap()[2].parse::<i32>().unwrap();
-        let day = &re.captures(&param).unwrap()[3].parse::<i32>().unwrap();
+        let year = &re.captures(param).unwrap()[1];
+        let month = &re.captures(param).unwrap()[2].parse::<i32>().unwrap();
+        let day = &re.captures(param).unwrap()[3].parse::<i32>().unwrap();
 
         let day_suffix = match day % 10 {
             1 => "st",
@@ -105,7 +105,7 @@ impl Helpers {
         Ok(())
     }
 
-    fn note<'reg: 'rc, 'rc>(
+    fn note(
         h: &Helper,
         _: &Handlebars,
         _: &Context,
@@ -113,7 +113,7 @@ impl Helpers {
         out: &mut dyn Output,
     ) -> HelperResult {
         let param = h.param(0).unwrap();
-        let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+        let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
         let path = format!("{}/{}", data_dir, param.value().as_str().unwrap().trim());
         let content = std::fs::read_to_string(path).unwrap();
 

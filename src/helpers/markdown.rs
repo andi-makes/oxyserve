@@ -8,7 +8,7 @@ use rocket_dyn_templates::handlebars::{
 pub struct Helpers;
 
 impl Helpers {
-    fn markdown<'reg: 'rc, 'rc>(
+    fn markdown(
         h: &Helper,
         _: &Handlebars,
         _: &Context,
@@ -16,7 +16,7 @@ impl Helpers {
         out: &mut dyn Output,
     ) -> HelperResult {
         let param = h.param(0).unwrap();
-        let data_dir = std::env::var("DATA_DIR").unwrap_or("./data".to_string());
+        let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
         let path = format!("{}/{}", data_dir, param.value().as_str().unwrap().trim());
         let content = std::fs::read_to_string(path).unwrap();
 
