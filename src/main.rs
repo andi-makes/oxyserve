@@ -1,17 +1,25 @@
+/// Oxyserve
+///
+/// Custom webserver built on top of rocket.rs
+/// Render your websites using handlebars templates
+/// Additional Helpers for embedding files into your site
 mod catcher;
 mod config;
+mod fileserver;
 mod helpers;
 
 use config::Config;
 
+use std::path::PathBuf;
+
+use rocket::http::Status;
+use rocket_dyn_templates::Template;
+
 #[macro_use]
 extern crate rocket;
 
-use std::path::PathBuf;
-
-use rocket::{fs::NamedFile, http::Status, response, Request, Response};
-use rocket_dyn_templates::Template;
-
+/// Main path handler
+/// Tries to load a website from the `data` directory
 #[get("/<path..>", rank = 1000)]
 fn index(path: PathBuf) -> Result<Template, Status> {
     // Get the data directory
@@ -23,7 +31,7 @@ fn index(path: PathBuf) -> Result<Template, Status> {
     page_path.push(&path);
     page_path.push("index");
     page_path.set_extension("json");
-    
+
     // If there is no normal page, construct a path to a note
     if !page_path.exists() {
         page_path = PathBuf::from(data_dir);
@@ -47,32 +55,7 @@ fn index(path: PathBuf) -> Result<Template, Status> {
     Ok(Template::render(page.template_name, page.context))
 }
 
-// CACHE STATIC FILES
-// See https://github.com/SergioBenitez/Rocket/issues/95#issuecomment-354824883
-// I had to adopt it a little bit tho
-
-struct CachedFile(NamedFile);
-
-impl<'r> response::Responder<'r, 'static> for CachedFile {
-    fn respond_to(self, req: &'r Request<'_>) -> response::Result<'static> {
-        Response::build_from(self.0.respond_to(req)?)
-            .raw_header("Cache-control", "max-age=31536000") // 1y
-            .ok()
-    }
-}
-
-#[get("/static/<file..>", rank = 10)]
-async fn files(file: PathBuf) -> Option<CachedFile> {
-    let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
-
-    NamedFile::open(std::path::Path::new(&format!("{}/static", &data_dir)).join(file))
-        .await
-        .ok()
-        .map(CachedFile)
-}
-
 // READY FOR LAUNCH
-
 #[launch]
 fn rocket() -> _ {
     let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
@@ -81,7 +64,7 @@ fn rocket() -> _ {
 
     rocket::build()
         .register("/", catchers![catcher::not_found])
-        .mount("/", routes![index, files])
+        .mount("/", routes![index, fileserver::files])
         .attach(Template::custom(move |engines| {
             helpers::customize(&mut engines.handlebars);
         }))
