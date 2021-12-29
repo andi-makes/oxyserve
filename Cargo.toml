@@ -15,6 +15,8 @@ serde_json = "1.0"
 regex = "1"
 actix-web = "3"
 actix-files = "0.3"
+actix-http = "2"
+
 [dependencies.handlebars]
 version="4.1"
 features=["dir_source"]

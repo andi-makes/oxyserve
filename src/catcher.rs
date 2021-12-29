@@ -1,18 +1,49 @@
-use crate::config::Config;
+use actix_web::{middleware::errhandlers::{ErrorHandlers, ErrorHandlerResponse}, dev::ServiceResponse, http::StatusCode};
+use actix_web::{web, Result};
+use actix_http::{body::Body, Response};
+use handlebars::Handlebars;
 
-use rocket::request::FromRequest;
-use rocket_dyn_templates::{Metadata, Template};
+// Custom error handlers, to return HTML responses when an error occurs.
+pub fn error_handlers() -> ErrorHandlers<Body> {
+    ErrorHandlers::new().handler(StatusCode::NOT_FOUND, not_found)
+}
 
-#[catch(404)]
-pub async fn not_found<'a>(req: &rocket::Request<'a>) -> Result<Template, &'static str> {
-    let metadata = Metadata::from_request(req).await.unwrap();
-    if metadata.contains_template("404") {
-        let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
-        match Config::from_file(&format!("{}/404.json", data_dir)) {
-            Ok(c) => Ok(Template::render("404", c.context)),
-            Err(_) => Ok(Template::render("404", ())),
+// Error handler for a 404 Page not found error.
+fn not_found<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<B>> {
+    let response = get_error_response(&res, "Page not found");
+    Ok(ErrorHandlerResponse::Response(
+        res.into_response(response.into_body()),
+    ))
+}
+
+// Generic error handler.
+fn get_error_response<B>(res: &ServiceResponse<B>, error: &str) -> Response<Body> {
+    let request = res.request();
+
+    // Provide a fallback to a simple plain text response in case an error occurs during the
+    // rendering of the error page.
+    let fallback = |e: &str| {
+        Response::build(res.status())
+            .content_type("text/plain")
+            .body(e.to_string())
+    };
+
+    let hb = request
+        .app_data::<web::Data<Handlebars>>()
+        .map(|t| t.get_ref());
+    match hb {
+        Some(hb) => {
+            let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
+            let config = crate::config::Config::from_file(&format!("{}/404.json", data_dir)).unwrap();
+            let body = hb.render("404", &config.context);
+
+            match body {
+                Ok(body) => Response::build(res.status())
+                    .content_type("text/html")
+                    .body(body),
+                Err(_) => fallback(error),
+            }
         }
-    } else {
-        Err("404 not found")
+        None => fallback(error),
     }
 }

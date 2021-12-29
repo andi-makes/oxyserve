@@ -5,30 +5,40 @@
 /// Additional Helpers for embedding files into your site
 use std::path::PathBuf;
 
-use actix_files::NamedFile;
 use actix_web::{get, App, HttpRequest, HttpServer};
-use actix_web::{web, HttpResponse, Result};
-
+use actix_web::{web, HttpResponse};
 use handlebars::Handlebars;
 
 mod config;
 mod helpers;
-
-#[get("/static/{filename:.*}")]
-async fn hello(req: HttpRequest) -> Result<NamedFile> {
-    let file_path: PathBuf = ["./data/static", req.match_info().query("filename")]
-        .iter()
-        .collect();
-
-    println!("{:?}", file_path);
-    Ok(NamedFile::open(file_path)?)
-}
+mod fileserver;
+mod catcher;
 
 #[get("/{filename:.*}")]
-async fn index(hb: web::Data<Handlebars<'_>>) -> HttpResponse {
+async fn index(req: HttpRequest, hb: web::Data<Handlebars<'_>>) -> HttpResponse {
     use config::{Config, ConfigError};
 
-    let page = match Config::from_file(&PathBuf::from("./data/pages/index.json")) {
+    // Get the data directory
+    let data_dir = &std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
+
+    let path = req.match_info().query("filename");
+
+    // First, construct the path to a normal page
+    let mut page_path = PathBuf::from(data_dir);
+    page_path.push("pages");
+    page_path.push(&path);
+    page_path.push("index");
+    page_path.set_extension("json");
+
+    // If there is no normal page, construct a path to a note
+    if !page_path.exists() {
+        page_path = PathBuf::from(data_dir);
+        page_path.push("notes");
+        page_path.push(&path);
+        page_path.set_extension("json");
+    }
+
+    let page = match Config::from_file(&page_path) {
         Ok(p) => p,
         Err(e) => match e {
             ConfigError::NotFound { name: _ } => return HttpResponse::NotFound().finish(),
@@ -55,11 +65,13 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(catcher::error_handlers())
             .app_data(handlebars_ref.clone())
-            .service(hello)
+            .service(fileserver::route)
             .service(index)
     })
     .bind("0.0.0.0:8080")?
     .run()
     .await
 }
+

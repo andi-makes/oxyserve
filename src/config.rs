@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 
+#[derive(Debug)]
 pub enum ConfigError {
     NotFound { name: String },
     JsonParseError { context: String },
