@@ -3,7 +3,7 @@ mod notes;
 mod svg;
 mod util;
 
-use rocket_dyn_templates::handlebars::Handlebars;
+use handlebars::Handlebars;
 
 trait CustomHelper {
     fn register(hbs: &mut Handlebars);

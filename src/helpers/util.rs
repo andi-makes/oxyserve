@@ -1,4 +1,4 @@
-use rocket_dyn_templates::handlebars::{
+use handlebars::{
     Context, Handlebars, Helper, HelperResult, Output, RenderContext,
 };
 
