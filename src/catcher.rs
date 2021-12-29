@@ -34,7 +34,10 @@ fn get_error_response<B>(res: &ServiceResponse<B>, error: &str) -> Response<Body
     match hb {
         Some(hb) => {
             let data_dir = std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
-            let config = crate::config::Config::from_file(&format!("{}/404.json", data_dir)).unwrap();
+            let config = match crate::config::Config::from_file(&format!("{}/404.json", data_dir)) {
+                Ok(c) => c,
+                Err(_) => return fallback(error),
+            };
             let body = hb.render("404", &config.context);
 
             match body {
