@@ -55,9 +55,12 @@ async fn index(req: HttpRequest, hb: web::Data<Handlebars<'_>>) -> HttpResponse 
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Get the data directory
+    let data_dir = &std::env::var("DATA_DIR").unwrap_or_else(|_| "./data".to_string());
+
     let mut handlebars = Handlebars::new();
     handlebars
-        .register_templates_directory(".html.hbs", "./data/templates")
+        .register_templates_directory(".html.hbs", format!("{}/templates", data_dir))
         .unwrap();
     helpers::customize(&mut handlebars);
     // Wrap Handlebars into something we can access later in the routing functions
