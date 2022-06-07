@@ -5,6 +5,7 @@
 /// Additional Helpers for embedding files into your site
 use std::path::PathBuf;
 
+use actix_files::Files;
 use actix_web::{get, App, HttpRequest, HttpServer};
 use actix_web::{web, HttpResponse};
 use handlebars::Handlebars;
@@ -68,9 +69,9 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .wrap(catcher::error_handlers())
+//            .wrap(catcher::error_handlers())
             .app_data(handlebars_ref.clone())
-            .service(fileserver::route)
+            .service(Files::new("/static", "./data"))
             .service(index)
     })
     .bind("0.0.0.0:8000")?
